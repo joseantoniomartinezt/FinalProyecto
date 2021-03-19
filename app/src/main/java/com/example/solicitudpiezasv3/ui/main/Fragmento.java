@@ -47,7 +47,7 @@ public class Fragmento extends Fragment {
 
         View view;
 
-        if(PageAdapter.esPagina(PAGINA,"texto")){
+        if(PageAdapter.esPagina(PAGINA,"Texto")){
 
             view = inflater.inflate(R.layout.texto,container,false);
             TextView txt = view.findViewById(R.id.textViewTitulo);
@@ -60,6 +60,6 @@ public class Fragmento extends Fragment {
         }
 
 
-        return inflater.inflate(R.layout.main_activity,container,false);
+        return view;
     }
 }

@@ -15,6 +15,7 @@ import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.View;
 import android.widget.GridView;
 
 
@@ -43,8 +44,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
 
-        adaptadorPaginas = new PageAdapter(this, getSupportFragmentManager()) {
-        };
+        adaptadorPaginas = new PageAdapter(this, getSupportFragmentManager());
+
 
         ViewPager viewPager = findViewById(R.id.view_pager);
         viewPager.setAdapter(adaptadorPaginas);
@@ -54,13 +55,14 @@ public class MainActivity extends AppCompatActivity {
 
         gridView = findViewById(R.id.vistaImagenes);
 
+        pedirPermisos();
     }
 
     public void pedirPermisos(){
 
         try {
-            String[] permisos = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
-            requestPermissions(permisos,1);
+            String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
+            requestPermissions(permissions,1);
 
         }catch(Exception e){
             mostrarAlerta("Error",e.toString());
@@ -69,25 +71,27 @@ public class MainActivity extends AppCompatActivity {
 
     String fileFoto = android.os.Environment.getExternalStorageDirectory() + File.separator+ "PRUEBA_TABS" + File.separator+ "temp.jpg";
 
-    public void tomarFoto(){
+    public void tomarFoto(View view){
 
         try {
+
             pedirPermisos();
 
             Intent intentTomarFoto = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            File fichero = new File(fileFoto);
-            Uri imagenUri = FileProvider.getUriForFile(getApplicationContext(), this.getApplicationContext().getPackageName() + ".provider", fichero);
+            File f = new File(fileFoto);
+            Uri fp = FileProvider.getUriForFile(getApplicationContext(), this.getApplicationContext().getPackageName() + ".provider", f);
 
-            new File(fichero.getParent()).mkdirs();
+            new File(f.getParent()).mkdirs();
 
-            intentTomarFoto.putExtra(MediaStore.EXTRA_OUTPUT,imagenUri);
+            intentTomarFoto.putExtra(MediaStore.EXTRA_OUTPUT,fp);
             intentTomarFoto.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intentTomarFoto.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             startActivityForResult(intentTomarFoto, 1);
 
 
         }catch (Exception e){
-
+            String ex = e.getMessage();
+            mostrarAlerta("tomarFoto", ex);
         }
     }
 
@@ -102,25 +106,24 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        ClipData clipData = data.getClipData();
+        //ClipData clipData = data.getClipData();
         try {
             if (resultCode == RESULT_OK && requestCode == 1){
-                File fichero = new File(fileFoto);
-
+                File f = new File(fileFoto);
 
                 try{
 
-                    BitmapFactory.Options bitmapOpciones = new BitmapFactory.Options();
-                    Bitmap bitmap = BitmapFactory.decodeFile(fichero.getAbsolutePath(),bitmapOpciones);
+                    BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
+                    Bitmap bitmap = BitmapFactory.decodeFile(f.getAbsolutePath(),bitmapOptions);
 
-                    String path = android.os.Environment.getExternalStorageDirectory() + File.separator + "PRUEBA_TABS" + File.separator;
+                    String path = android.os.Environment.getExternalStorageDirectory() + File.separator + "SOLICITUD_PIEZAS" + File.separator;
                     OutputStream outFile = null;
 
-                    File f = new File(path);
-                    f.mkdirs();
-                    f = new File(path, "PRUEBA_" + new SimpleDateFormat("dd-MM-yyyy_HHmmss").format(Calendar.getInstance().getTime()) + ".jpg");
+                    File file = new File(path);
+                    file.mkdirs();
+                    file = new File(path, "SOLICITUD_" + new SimpleDateFormat("dd-MM-yyyy_HHmmss").format(Calendar.getInstance().getTime()) + ".jpg");
 
-                    outFile = new FileOutputStream(f);
+                    outFile = new FileOutputStream(file);
                     System.gc();
 
                     bitmap.compress(Bitmap.CompressFormat.JPEG,70,outFile);
@@ -128,21 +131,22 @@ public class MainActivity extends AppCompatActivity {
                     outFile.flush();
                     outFile.close();
 
-                    fichero.delete();
+                    f.delete();
 
                     Intent intentActualizarGaleria = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                    Uri contentUri = Uri.fromFile(f);
+                    Uri contentUri = Uri.fromFile(file);
                     intentActualizarGaleria.setData(contentUri);
                     this.sendBroadcast(intentActualizarGaleria);
 
                     listaImagenes.add(contentUri);
+
 
                 }catch (Exception e){
                     mostrarAlerta("Error al tomar la foto", e.getMessage());
                 }
             }
 
-            else if(requestCode == 100 && resultCode == RESULT_OK){
+            /*else if(requestCode == 100 && resultCode == RESULT_OK){
                 try {
 
                     if(clipData == null){
@@ -157,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
                 }catch (Exception e){
                     mostrarAlerta("Error al abrir la galeria", e.getMessage());
                 }
-            }
+            }*/
 
             adaptadorImagenes = new GridViewAdapter(this,listaImagenes);
             gridView.setAdapter(adaptadorImagenes);
@@ -169,10 +173,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void siguientePagina(){
 
-        int posicion = tabs.getSelectedTabPosition() + 1;
+        int pos = tabs.getSelectedTabPosition() + 1;
 
-        if(posicion < adaptadorPaginas.getCount()){
-            tabs.getTabAt(posicion).select();
+        if(pos < adaptadorPaginas.getCount()){
+            tabs.getTabAt(pos).select();
         }
     }
 
